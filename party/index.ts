@@ -23,7 +23,7 @@ export default class Server implements Party.Server {
     this.party.broadcast(
       `${sender.id}: ${message}`,
       // ...except for the connection it came from
-      [sender.id]
+      [sender.id] 
     );
   }
 }
