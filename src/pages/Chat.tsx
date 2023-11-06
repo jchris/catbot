@@ -29,7 +29,7 @@ export function Chat() {
         emit(doc.sent)
       }
     },
-    { limit: 50, descending: true }
+    { limit: 100, descending: true }
   ).docs as MsgDoc[]
 
   // const messages = [...rmessages].reverse()
@@ -66,38 +66,25 @@ export function Chat() {
           const byteArray = new Uint8Array(byteNumbers)
           const file = new File([byteArray], `image.png`, { type: 'image/png' })
           database.get(message._id).then(doc => {
-            database
-              .put({
-                ...doc,
-                prompt: message.prompt,
-                _files: {
-                  img: file
-                }
-              } as unknown as Doc)
-              .then(() => {
-                setTimeout(() => {
-                  doScroll()
-                }, 1000)
-              })
+            database.put({
+              ...doc,
+              prompt: message.prompt,
+              _files: {
+                img: file
+              }
+            } as unknown as Doc)
           })
         } else {
-          database
-            .put({
-              _id: message._id,
-              msgId: message.msgId,
-              role: 'img',
-              sent: Date.now()
-            } as unknown as Doc)
-            .then(() => {
-              setTimeout(() => {
-                doScroll()
-              }, 100)
-            })
+          database.put({
+            _id: message._id,
+            msgId: message.msgId,
+            role: 'img',
+            sent: Date.now()
+          } as unknown as Doc)
         }
       } else {
         if (message.msg) {
           setIncomingMessage(message)
-          doScroll()
         }
         if (message.done) {
           database
@@ -117,23 +104,12 @@ export function Chat() {
     resetField('msg')
   }
 
-  function doScroll() {
-    scrollableDivRef.current?.scrollTo({
-      top: scrollableDivRef.current.scrollHeight,
-      behavior: 'smooth'
-    })
-  }
-
   useEffect(() => {
     if (isDone) {
       setIncomingMessage({ _id: '', msg: '', sent: Date.now() })
       setIsDone(false) // Reset isDone to false after setting incoming message
     }
   }, [isDone])
-
-  useEffect(() => {
-    doScroll()
-  }, [messages])
 
   return (
     <div className="flex flex-col h-screen">
