@@ -22,15 +22,24 @@ export function Chat() {
   // const { id } = useParams<{ id: string }>()
   const { register, handleSubmit, resetField } = useForm()
   const { database, useLiveQuery } = useFireproof(dbName)
-  const scrollDiv = useRef<HTMLDivElement | null>(null)
 
-  const messages = useLiveQuery((doc, emit) => {
-    if (doc.sent) {
-      emit(doc.sent)
-    }
-  }).docs as MsgDoc[]
+  const rmessages = useLiveQuery(
+    (doc, emit) => {
+      if (doc.sent) {
+        emit(doc.sent)
+      }
+    },
+    { limit: 10, descending: true }
+  ).docs as MsgDoc[]
+
+  const messages = [...rmessages].reverse()
+
+  const scrollableDivRef = useRef<
+    HTMLDivElement & { scrollTo: (options: { top: number; behavior: 'smooth' }) => void }
+  >(null)
 
   // const all = useLiveQuery('_id').docs
+  const [isDone, setIsDone] = useState(false)
 
   const [incomingMessage, setIncomingMessage] = useState<MsgData>({
     _id: '',
@@ -56,47 +65,60 @@ export function Chat() {
           }
           const byteArray = new Uint8Array(byteNumbers)
           const file = new File([byteArray], `image.png`, { type: 'image/png' })
-          database
-            .put({
-              _id: message._id,
-              msgId: message.msgId,
-              prompt: message.prompt,
-              role: 'img',
-              sent: Date.now(),
-              _files: {
-                img: file
-              }
-            } as unknown as Doc)
-            .then(() => {
-              setTimeout(() => {
-                scrollDiv.current?.scrollIntoView({ behavior: 'smooth' })
-              }, 100)
-            })
+          database.get(message._id).then(doc => {
+            database
+              .put({
+                ...doc,
+                prompt: message.prompt,
+                _files: {
+                  img: file
+                }
+              } as unknown as Doc)
+              .then(() => {
+                setTimeout(() => {
+                  doScroll()
+                }, 1000)
+              })
+          })
+          // database
+          //   .put({
+          //     _id: message._id,
+          //     msgId: message.msgId,
+          //     prompt: message.prompt,
+          //     role: 'img',
+          //     sent: Date.now(),
+          //     _files: {
+          //       img: file
+          //     }
+          //   } as unknown as Doc)
+          //   .then(() => {
+          //     doScroll()
+          //   })
         } else {
           database
             .put({
               _id: message._id,
               msgId: message.msgId,
-              prompt: message.prompt || '',
               role: 'img',
               sent: Date.now()
             } as unknown as Doc)
             .then(() => {
               setTimeout(() => {
-                scrollDiv.current?.scrollIntoView({ behavior: 'smooth' })
+                doScroll()
               }, 100)
             })
         }
       } else {
         if (message.msg) {
           setIncomingMessage(message)
-          scrollDiv.current?.scrollIntoView({ behavior: 'smooth' })
+          doScroll()
         }
         if (message.done) {
           database
             .put({ _id: message._id, msg: message.msg, sent: Date.now(), role: 'ai' })
             .then(() => {
-              setIncomingMessage({ _id: '', msg: '', sent: Date.now() })
+              setIsDone(true)
+              // setIncomingMessage({ _id: '', msg: '', sent: Date.now() })
             })
         }
       }
@@ -109,20 +131,32 @@ export function Chat() {
     resetField('msg')
   }
 
+  function doScroll() {
+    scrollableDivRef.current?.scrollTo({
+      top: scrollableDivRef.current.scrollHeight,
+      behavior: 'smooth'
+    })
+  }
+
   useEffect(() => {
-    setTimeout(() => {
-      scrollDiv.current?.scrollIntoView({ behavior: 'smooth' })
-    }, 100)
+    if (isDone) {
+      setIncomingMessage({ _id: '', msg: '', sent: Date.now() })
+      setIsDone(false) // Reset isDone to false after setting incoming message
+    }
+  }, [isDone])
+
+  useEffect(() => {
+    doScroll()
   }, [messages])
 
   return (
     <div className="flex flex-col h-screen">
-      <div className="flex-grow overflow-auto p-4">
+      <div ref={scrollableDivRef} className="flex-grow overflow-auto p-4">
         <ImageBubble imgSrc={catImage} alt="Welcome photo" />
         <ChatBubble message="Hi, I'm Fluffy, welcome to cat chat. You can ask 'meow' anything. What do you want to know?" />
 
         {messages.map((message: MsgDoc) => {
-          console.log('message', message)
+          // console.log('message', message)
           if (message.role === 'user') {
             return (
               <UserBubble
@@ -144,7 +178,6 @@ export function Chat() {
 
         {incomingMessage.msg && <ChatBubble message={incomingMessage.msg as string} />}
       </div>
-      <div ref={scrollDiv} />
 
       <div className="bg-gray-300 p-4">
         <form onSubmit={handleSubmit(sendMessage)} className="flex items-center">

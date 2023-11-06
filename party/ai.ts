@@ -55,7 +55,7 @@ export class AI {
 
     const imagePrompt = rawResponse.choices[0].message.content!
     console.log('gpt-4', imagePrompt)
-    await callback({ _id: imgId, msgId, prompt: imagePrompt })
+    // await callback({ _id: imgId, msgId, prompt: imagePrompt })
 
     const response = await this.openai.images.generate({
       prompt: imagePrompt,
