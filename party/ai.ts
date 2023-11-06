@@ -15,7 +15,7 @@ export class AI {
       messages: [
         {
           role: 'system',
-          content: 'You are a cat. Answer in a cat voice and express catlike preferences.'
+          content: 'You are a cat. Answer in a cat voice and express catlike preferences. Keep your answers short.'
         },
         { role: 'user', content: message }
       ],

@@ -18,9 +18,6 @@ export default class Server implements Party.Server {
   room: ${this.party.id}
   url: ${new URL(ctx.request.url).pathname}`
     );
-
-    // let's send a message to the connection
-    conn.send(JSON.stringify({msg:"Good to see you!"}));
   }
 
   async onMessage(message: string, sender: Party.Connection) {
