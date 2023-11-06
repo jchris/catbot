@@ -23,16 +23,16 @@ export function Chat() {
   const { register, handleSubmit, resetField } = useForm()
   const { database, useLiveQuery } = useFireproof(dbName)
 
-  const rmessages = useLiveQuery(
+  const messages = useLiveQuery(
     (doc, emit) => {
       if (doc.sent) {
         emit(doc.sent)
       }
     },
-    { limit: 10, descending: true }
+    { limit: 50, descending: true }
   ).docs as MsgDoc[]
 
-  const messages = [...rmessages].reverse()
+  // const messages = [...rmessages].reverse()
 
   const scrollableDivRef = useRef<
     HTMLDivElement & { scrollTo: (options: { top: number; behavior: 'smooth' }) => void }
@@ -80,20 +80,6 @@ export function Chat() {
                 }, 1000)
               })
           })
-          // database
-          //   .put({
-          //     _id: message._id,
-          //     msgId: message.msgId,
-          //     prompt: message.prompt,
-          //     role: 'img',
-          //     sent: Date.now(),
-          //     _files: {
-          //       img: file
-          //     }
-          //   } as unknown as Doc)
-          //   .then(() => {
-          //     doScroll()
-          //   })
         } else {
           database
             .put({
@@ -151,9 +137,8 @@ export function Chat() {
 
   return (
     <div className="flex flex-col h-screen">
-      <div ref={scrollableDivRef} className="flex-grow overflow-auto p-4">
-        <ImageBubble imgSrc={catImage} alt="Welcome photo" />
-        <ChatBubble message="Hi, I'm Fluffy, welcome to cat chat. You can ask 'meow' anything. What do you want to know?" />
+      <div ref={scrollableDivRef} className="flex flex-col-reverse overflow-auto p-4">
+        {incomingMessage.msg && <ChatBubble message={incomingMessage.msg as string} />}
 
         {messages.map((message: MsgDoc) => {
           // console.log('message', message)
@@ -176,7 +161,8 @@ export function Chat() {
           }
         })}
 
-        {incomingMessage.msg && <ChatBubble message={incomingMessage.msg as string} />}
+        <ChatBubble message="Hi, I'm Fluffy, welcome to cat chat. You can ask 'meow' anything. What do you want to know?" />
+        <ImageBubble imgSrc={catImage} alt="Welcome photo" />
       </div>
 
       <div className="bg-gray-300 p-4">
