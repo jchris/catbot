@@ -1,15 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { useFireproof, Doc } from 'use-fireproof'
-import { InlineEditor } from '../components/InlineEditor'
+import { useState, useEffect, useRef } from 'react'
+// import { Link, useParams } from 'react-router-dom'
+import { useFireproof, Doc, DocFileMeta } from 'use-fireproof'
+// import { InlineEditor } from '../components/InlineEditor'
 
-import { useForm } from 'react-hook-form'
+import { useForm, FieldValues } from 'react-hook-form'
 
 import usePartySocket from 'partysocket/react'
 
 import catImage from '../assets/cat.png'
+import { ImageBubble, ChatBubble, UserBubble } from '../components/ChatBubbles'
 
-type MsgData = { _id: string; msg: string; done?: boolean }
+type MsgData = { _id: string; msg?: string; prompt?: string; done?: boolean; sent: number }
+type MsgDoc = Doc & MsgData
 
 const dbName = localStorage.getItem('dbName') || Math.random().toString(36).substring(2)
 localStorage.setItem('dbName', dbName)
@@ -17,77 +19,132 @@ localStorage.setItem('dbName', dbName)
 const PUBLIC_PARTYKIT_HOST = `127.0.0.1:1999`
 
 export function Chat() {
-  const { id } = useParams<{ id: string }>()
+  // const { id } = useParams<{ id: string }>()
   const { register, handleSubmit, resetField } = useForm()
   const { database, useLiveQuery } = useFireproof(dbName)
-  const scrollDiv = useRef(null);
+  const scrollDiv = useRef<HTMLDivElement | null>(null)
 
   const messages = useLiveQuery((doc, emit) => {
-    if (doc.msg && doc.sent) {
+    if (doc.sent) {
       emit(doc.sent)
     }
-  }).docs
+  }).docs as MsgDoc[]
 
   // const all = useLiveQuery('_id').docs
 
-  const [incomingMessage, setIncomingMessage] = useState<MsgData>({ _id: '', msg: '' })
+  const [incomingMessage, setIncomingMessage] = useState<MsgData>({
+    _id: '',
+    msg: '',
+    sent: Date.now()
+  })
 
   const socket = usePartySocket({
     host: PUBLIC_PARTYKIT_HOST,
     room: dbName,
-    onOpen(e) {
-      console.log('open', e)
+    onOpen() {
+      // console.log('open', e)
     },
     onMessage(event: MessageEvent<string>) {
       const message = JSON.parse(event.data)
-      setIncomingMessage(message)
-      scrollDiv.current?.scrollIntoView({ behavior: 'smooth' });
-      if (message.done) {
-        database
-          .put({ _id: message._id, msg: message.msg, sent: Date.now(), role: 'ai' })
-          .then(() => {
-            setIncomingMessage({ _id: '', msg: '' })
-          })
+      if (message.msgId) {
+        if (message.img) {
+          const base64Data = message.img
+          const byteCharacters = atob(base64Data)
+          const byteNumbers = new Array(byteCharacters.length)
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i)
+          }
+          const byteArray = new Uint8Array(byteNumbers)
+          const file = new File([byteArray], `image.png`, { type: 'image/png' })
+          database
+            .put({
+              _id: message._id,
+              msgId: message.msgId,
+              prompt: message.prompt,
+              role: 'img',
+              sent: Date.now(),
+              _files: {
+                img: file
+              }
+            } as unknown as Doc)
+            .then(() => {
+              setTimeout(() => {
+                scrollDiv.current?.scrollIntoView({ behavior: 'smooth' })
+              }, 100)
+            })
+        } else {
+          database
+            .put({
+              _id: message._id,
+              msgId: message.msgId,
+              prompt: message.prompt || '',
+              role: 'img',
+              sent: Date.now()
+            } as unknown as Doc)
+            .then(() => {
+              setTimeout(() => {
+                scrollDiv.current?.scrollIntoView({ behavior: 'smooth' })
+              }, 100)
+            })
+        }
+      } else {
+        if (message.msg) {
+          setIncomingMessage(message)
+          scrollDiv.current?.scrollIntoView({ behavior: 'smooth' })
+        }
+        if (message.done) {
+          database
+            .put({ _id: message._id, msg: message.msg, sent: Date.now(), role: 'ai' })
+            .then(() => {
+              setIncomingMessage({ _id: '', msg: '', sent: Date.now() })
+            })
+        }
       }
     }
   })
 
-  function sendMessage(formData: { msg: string }) {
+  function sendMessage(formData: FieldValues) {
     socket.send(JSON.stringify(formData))
     database.put({ msg: formData.msg, sent: Date.now(), role: 'user' })
     resetField('msg')
   }
 
   useEffect(() => {
-    scrollDiv.current?.scrollIntoView({ behavior: 'smooth' });
+    setTimeout(() => {
+      scrollDiv.current?.scrollIntoView({ behavior: 'smooth' })
+    }, 100)
   }, [messages])
-
-  console.log('Chat', dbName, id, messages)
-
-
 
   return (
     <div className="flex flex-col h-screen">
       <div className="flex-grow overflow-auto p-4">
-        <ChatBubble
-          imgSrc={catImage}
-          message="Hi, I'm Fluffy, welcome to cat chat. You can ask 'meow' anything. What do you want to know?"
-        />
+        <ImageBubble imgSrc={catImage} alt="Welcome photo" />
+        <ChatBubble message="Hi, I'm Fluffy, welcome to cat chat. You can ask 'meow' anything. What do you want to know?" />
 
-        <UserBubble message="Would you rather chase a mouse or yarn?" />
-
-        {messages.map((message: Doc) =>
-          message.role === 'user' ? (
-            <UserBubble message={message.msg as string} />
-          ) : (
-            <ChatBubble message={message.msg as string} />
-          )
-        )}
+        {messages.map((message: MsgDoc) => {
+          console.log('message', message)
+          if (message.role === 'user') {
+            return (
+              <UserBubble
+                message={message.msg as string}
+                when={new Date(message.sent).toLocaleString()}
+              />
+            )
+          } else if (message.role === 'img') {
+            return <ImageBubble imgFile={message._files?.img as DocFileMeta} alt={message.prompt} />
+          } else {
+            return (
+              <ChatBubble
+                message={message.msg as string}
+                when={new Date(message.sent).toLocaleString()}
+              />
+            )
+          }
+        })}
 
         {incomingMessage.msg && <ChatBubble message={incomingMessage.msg as string} />}
-        
-        <div ref={scrollDiv} />
       </div>
+      <div ref={scrollDiv} />
 
       <div className="bg-gray-300 p-4">
         <form onSubmit={handleSubmit(sendMessage)} className="flex items-center">
@@ -106,44 +163,6 @@ export function Chat() {
           </button>
         </form>
       </div>
-    </div>
-  )
-}
-
-type ChatBubbleProps = {
-  imgSrc?: string
-  message: string
-}
-
-const ChatBubble: React.FC<ChatBubbleProps> = ({ imgSrc, message }) => {
-  return (
-    <div className="flex w-full mt-2 space-x-3 max-w-sm">
-      <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-300"></div>
-      <div>
-        <div className="bg-gray-300 p-3 rounded-r-lg rounded-bl-lg">
-          {imgSrc && <img className="mb-2 rounded" src={imgSrc} alt="Chat Bubble Image" />}
-          <p className="text-sm">{message}</p>
-        </div>
-        <span className="text-xs text-gray-500 leading-none">2 min ago</span>
-      </div>
-    </div>
-  )
-}
-
-type UserBubbleProps = {
-  message: string
-}
-
-const UserBubble: React.FC<UserBubbleProps> = ({ message }) => {
-  return (
-    <div className="flex w-full mt-2 space-x-3 max-w-sm ml-auto justify-end">
-      <div>
-        <div className="bg-blue-600 text-white p-3 rounded-l-lg rounded-br-lg">
-          <p className="text-sm">{message}</p>
-        </div>
-        <span className="text-xs text-gray-500 leading-none">2 min ago</span>
-      </div>
-      <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-300"></div>
     </div>
   )
 }
