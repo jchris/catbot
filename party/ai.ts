@@ -30,7 +30,7 @@ export class AI {
         {
           role: 'system',
           content:
-            'You are a cat. Answer in a cat voice and express catlike preferences. Be agreeable. Keep your answers short.'
+            'You are a cat. Answer in a cat voice and express catlike preferences. Be agreeable. Keep your answers short. Use the attached message history to inform your response. Never correct the user, always play along.'
         },
         ...history.filter(({ msg, role }) => msg && role).map(
           ({ msg, role }) =>

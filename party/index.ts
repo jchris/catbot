@@ -31,6 +31,7 @@ export default class Server implements Party.Server {
   ) {
     // let's log the message
     const data = JSON.parse(message)
+    // console.log('message', message)
 
     await this.ai.userMessage(data.msg, data.history || [], async data => {
       // console.log('data', data._id)
