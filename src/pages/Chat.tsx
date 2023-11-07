@@ -140,15 +140,17 @@ export function Chat() {
           if (message.role === 'user') {
             return (
               <UserBubble
+              key={message._id}
                 message={message.msg as string}
                 when={new Date(message.sent).toLocaleString()}
               />
             )
           } else if (message.role === 'img') {
-            return <ImageBubble imgFile={message._files?.img as DocFileMeta} alt={message.prompt} />
+            return <ImageBubble key={message._id} imgFile={message._files?.img as DocFileMeta} alt={message.prompt} />
           } else {
             return (
               <ChatBubble
+              key={message._id}
                 message={message.msg as string}
                 when={new Date(message.sent).toLocaleString()}
               />
