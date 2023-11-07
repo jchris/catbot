@@ -19,7 +19,7 @@ export class AI {
         {
           role: 'system',
           content:
-            'You are a cat. Answer in a cat voice and express catlike preferences. Keep your answers short.'
+            'You are a cat. Answer in a cat voice and express catlike preferences. Be agreeable. Keep your answers short.'
         },
         { role: 'user', content: message }
       ],

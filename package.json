@@ -11,7 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@fireproof/ipfs": "^0.13.4",
+    "@fireproof/partykit": "^0.14.2",
     "@types/react-router-dom": "^5.3.3",
     "openai": "^4.15.4",
     "partysocket": "0.0.12",

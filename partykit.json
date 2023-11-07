@@ -1,9 +1,12 @@
 {
   "name": "chat-party",
   "main": "party/index.ts",
+  "parties": {
+    "fireproof": "node_modules/@fireproof/partykit/src/server.ts"
+  },
   "compatibilityDate": "2023-11-04",
   "vars": {
-    "VITE_OPEN_AI_API_KEY": "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",
+    "OPEN_AI_API_KEY": "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",
     "VITE_PUBLIC_PARTYKIT_HOST": "127.0.0.1:1999",
     "PUBLIC_PARTYKIT_HOST": "127.0.0.1:1999"
   }

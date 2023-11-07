@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 // import { Link, useParams } from 'react-router-dom'
 import { useFireproof, Doc, DocFileMeta } from 'use-fireproof'
 // import { InlineEditor } from '../components/InlineEditor'
+import { connect } from '@fireproof/partykit'
 
 import { useForm, FieldValues } from 'react-hook-form'
 
@@ -16,12 +17,14 @@ type MsgDoc = Doc & MsgData
 const dbName = localStorage.getItem('dbName') || Math.random().toString(36).substring(2)
 localStorage.setItem('dbName', dbName)
 
-const PUBLIC_PARTYKIT_HOST = `127.0.0.1:1999`
+const PUBLIC_PARTYKIT_HOST = import.meta.env.VITE_PUBLIC_PARTYKIT_HOST
 
 export function Chat() {
   // const { id } = useParams<{ id: string }>()
   const { register, handleSubmit, resetField } = useForm()
   const { database, useLiveQuery } = useFireproof(dbName)
+
+  connect.partykit(database, PUBLIC_PARTYKIT_HOST)
 
   const messages = useLiveQuery(
     (doc, emit) => {
@@ -91,7 +94,6 @@ export function Chat() {
             .put({ _id: message._id, msg: message.msg, sent: Date.now(), role: 'ai' })
             .then(() => {
               setIsDone(true)
-              // setIncomingMessage({ _id: '', msg: '', sent: Date.now() })
             })
         }
       }
@@ -113,7 +115,7 @@ export function Chat() {
 
   return (
     <div className="flex flex-col h-screen">
-      <div ref={scrollableDivRef} className="flex flex-col-reverse overflow-auto p-4">
+      <div ref={scrollableDivRef} className="flex flex-col-reverse overflow-auto p-4 pb-48">
         {incomingMessage.msg && <ChatBubble message={incomingMessage.msg as string} />}
 
         {messages.map((message: MsgDoc) => {
@@ -141,7 +143,7 @@ export function Chat() {
         <ImageBubble imgSrc={catImage} alt="Welcome photo" />
       </div>
 
-      <div className="bg-gray-300 p-4">
+      <div className="fixed bottom-0 w-full bg-gray-300 p-4">
         <form onSubmit={handleSubmit(sendMessage)} className="flex items-center">
           <input
             {...register('msg')}
