@@ -7,6 +7,7 @@ type MsgData = {
   prompt?: string
   msg?: string
   done?: boolean
+  sent: number
 }
 
 type History = { msg: string; role: string }[]
@@ -43,7 +44,7 @@ export class AI {
       ],
       stream: true
     })
-    const data: MsgData = { _id, msg: '' }
+    const data: MsgData = { _id, msg: '', sent: Date.now() }
     callback(data)
     for await (const part of stream) {
       data.msg += part.choices[0]?.delta?.content || ''
@@ -59,8 +60,8 @@ export class AI {
     callback: (data: MsgData) => Promise<void>
   ) {
     const imgId = Math.random().toString(36).substring(2)
-
-    await callback({ _id: imgId, msgId })
+    const sent = Date.now()
+    await callback({ _id: imgId, msgId, sent })
 
     const rawResponse = await this.openai.chat.completions.create({
       model: 'gpt-4',
@@ -87,6 +88,6 @@ export class AI {
       response_format: 'b64_json'
     })
     // console.log('image', response)
-    await callback({ _id: imgId, msgId, prompt: imagePrompt, img: response.data[0].b64_json })
+    await callback({ _id: imgId, msgId, sent, prompt: imagePrompt, img: response.data[0].b64_json })
   }
 }

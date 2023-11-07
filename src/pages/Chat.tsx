@@ -40,13 +40,19 @@ export function Chat() {
   >(null)
 
   // const all = useLiveQuery('_id').docs
-  const [isDone, setIsDone] = useState(false)
 
   const [incomingMessage, setIncomingMessage] = useState<MsgData>({
     _id: '',
     msg: '',
     sent: Date.now()
   })
+
+  function scrollTo() {
+    scrollableDivRef.current?.scrollTo({
+      top: scrollableDivRef.current.scrollHeight
+      // behavior: 'smooth'
+    })
+  }
 
   const socket = usePartySocket({
     host: PUBLIC_PARTYKIT_HOST,
@@ -76,22 +82,27 @@ export function Chat() {
             } as unknown as Doc)
           })
         } else {
-          database.put({
-            _id: message._id,
-            msgId: message.msgId,
-            role: 'img',
-            sent: Date.now()
-          } as unknown as Doc)
+          database
+            .put({
+              _id: message._id,
+              msgId: message.msgId,
+              role: 'img',
+              sent: message.sent
+            } as unknown as Doc)
+            .then(() => {
+              scrollTo()
+            })
         }
       } else {
         if (message.msg) {
           setIncomingMessage(message)
+          scrollTo()
         }
         if (message.done) {
           database
-            .put({ _id: message._id, msg: message.msg, sent: Date.now(), role: 'ai' })
+            .put({ _id: message._id, msg: message.msg, sent: message.sent, role: 'ai' })
             .then(() => {
-              setIsDone(true)
+              scrollTo()
             })
         }
       }
@@ -99,26 +110,32 @@ export function Chat() {
   })
 
   function sendMessage(formData: FieldValues) {
-    const history = [...messages].map(({msg, role}) => ({msg, role}))
+    const history = [...messages].map(({ msg, role }) => ({ msg, role }))
     formData.history = history.filter(({ msg, role }) => msg && role).reverse()
     socket.send(JSON.stringify(formData))
-    database.put({ msg: formData.msg, sent: Date.now(), role: 'user' })
+    database.put({ msg: formData.msg, sent: Date.now(), role: 'user' }).then(() => {
+      setTimeout(() => {
+        scrollTo()
+      }, 100)
+    })
     resetField('msg')
   }
 
-  useEffect(() => {
-    if (isDone) {
-      setIncomingMessage({ _id: '', msg: '', sent: Date.now() })
-      setIsDone(false) // Reset isDone to false after setting incoming message
+  const rmessages = [...messages]
+  if (incomingMessage._id) {
+    if (!(rmessages.length && rmessages.find(({ _id }) => _id === incomingMessage._id))) {
+      rmessages.unshift(incomingMessage)
     }
-  }, [isDone])
+  }
 
   return (
-    <div className="flex flex-col h-screen">
-      <div ref={scrollableDivRef} className="flex flex-col-reverse overflow-y-auto overflow-x-hidden p-4 pb-48">
-        {incomingMessage.msg && <ChatBubble message={incomingMessage.msg as string} />}
+    <>
+      <div
+        ref={scrollableDivRef}
+        className="flex flex-col-reverse overflow-y-auto overflow-x-hidden p-4 pb-24"
+      >
 
-        {messages.map((message: MsgDoc) => {
+        {rmessages.map((message: MsgDoc) => {
           // console.log('message', message)
           if (message.role === 'user') {
             return (
@@ -160,6 +177,6 @@ export function Chat() {
           </button>
         </form>
       </div>
-    </div>
+    </>
   )
 }

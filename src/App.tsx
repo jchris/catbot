@@ -6,7 +6,7 @@ import { Route, Routes } from 'react-router-dom'
 import { Chat } from './pages/Chat'
 
 function Layout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>
+  return <div className="flex flex-col h-screen">{children}</div>
 }
 
 function App() {
