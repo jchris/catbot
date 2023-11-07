@@ -23,7 +23,7 @@ export default class Server implements Party.Server {
   async onMessage(message: string, sender: Party.Connection) {
     // let's log the message
     message = JSON.parse(message).msg
-    console.log(`connection ${sender.id} sent message: ${message}`);
+    // console.log(`connection ${sender.id} sent message: ${message}`);
 
     await this.ai.userMessage(message, async (data) => {
       // console.log('data', data._id)
