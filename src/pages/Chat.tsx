@@ -145,7 +145,7 @@ export function Chat() {
         <form onSubmit={handleSubmit(sendMessage)} className="flex items-center">
           <input
             {...register('msg')}
-            className="flex-grow h-10 rounded px-3 text-sm"
+            className="flex-grow h-10 rounded px-3 text-lg"
             type="text"
             placeholder="Type your message…"
             autoComplete="off"
