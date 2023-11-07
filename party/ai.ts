@@ -80,6 +80,7 @@ export class AI {
     // await callback({ _id: imgId, msgId, prompt: imagePrompt })
 
     const response = await this.openai.images.generate({
+      model: "dall-e-3",
       prompt: imagePrompt,
       n: 1,
       size: '1024x1024',
