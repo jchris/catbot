@@ -1,6 +1,15 @@
 import OpenAI from 'openai'
 
-type MsgData = { _id: string; msgId?: string, img?: string; prompt?: string; msg?: string; done?: boolean }
+type MsgData = {
+  _id: string
+  msgId?: string
+  img?: string
+  prompt?: string
+  msg?: string
+  done?: boolean
+}
+
+type History = { msg: string; role: string }[]
 
 export class AI {
   openai: OpenAI
@@ -8,10 +17,12 @@ export class AI {
     this.openai = new OpenAI({ apiKey, organization: 'org-Ke48QiDoEsESbWg4SZjQQx1e' })
   }
 
-  async userMessage(message: string, callback: (data: MsgData) => Promise<void>) {
+  async userMessage(message: string, history: History, callback: (data: MsgData) => Promise<void>) {
     const _id = Math.random().toString(36).substring(2)
 
     void this.makeRelatedImage(_id, message, callback)
+
+// console.log('history', history.filter(({ msg, role }) => msg && role))
 
     const stream = await this.openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
@@ -21,6 +32,13 @@ export class AI {
           content:
             'You are a cat. Answer in a cat voice and express catlike preferences. Be agreeable. Keep your answers short.'
         },
+        ...history.filter(({ msg, role }) => msg && role).map(
+          ({ msg, role }) =>
+            ({
+              role: (role === 'user' ? 'user' : 'assistant'),
+              content: msg
+            } as { role: 'user' | 'assistant'; content: string })
+        ),
         { role: 'user', content: message }
       ],
       stream: true
@@ -35,7 +53,11 @@ export class AI {
     await callback(data)
   }
 
-  async makeRelatedImage(msgId: string, message: string, callback: (data: MsgData) => Promise<void>) {
+  async makeRelatedImage(
+    msgId: string,
+    message: string,
+    callback: (data: MsgData) => Promise<void>
+  ) {
     const imgId = Math.random().toString(36).substring(2)
 
     await callback({ _id: imgId, msgId })

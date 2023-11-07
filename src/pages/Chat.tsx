@@ -99,6 +99,8 @@ export function Chat() {
   })
 
   function sendMessage(formData: FieldValues) {
+    const history = [...messages].map(({msg, role}) => ({msg, role}))
+    formData.history = history.filter(({ msg, role }) => msg && role)
     socket.send(JSON.stringify(formData))
     database.put({ msg: formData.msg, sent: Date.now(), role: 'user' })
     resetField('msg')
