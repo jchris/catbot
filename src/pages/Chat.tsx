@@ -113,7 +113,7 @@ export function Chat() {
 
   return (
     <div className="flex flex-col h-screen">
-      <div ref={scrollableDivRef} className="flex flex-col-reverse overflow-auto p-4 pb-48">
+      <div ref={scrollableDivRef} className="flex flex-col-reverse overflow-y-auto overflow-x-hidden p-4 pb-48">
         {incomingMessage.msg && <ChatBubble message={incomingMessage.msg as string} />}
 
         {messages.map((message: MsgDoc) => {
