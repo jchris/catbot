@@ -26,7 +26,7 @@ export default class Server implements Party.Server {
     console.log(`connection ${sender.id} sent message: ${message}`);
 
     await this.ai.userMessage(message, async (data) => {
-      console.log('data', data._id)
+      // console.log('data', data._id)
       sender.send(JSON.stringify(data))
     })
   }

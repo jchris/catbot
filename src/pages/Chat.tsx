@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-// import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useFireproof, Doc, DocFileMeta } from 'use-fireproof'
 // import { InlineEditor } from '../components/InlineEditor'
 import { connect } from '@fireproof/partykit'
@@ -14,13 +14,11 @@ import { ImageBubble, ChatBubble, UserBubble } from '../components/ChatBubbles'
 type MsgData = { _id: string; msg?: string; prompt?: string; done?: boolean; sent: number }
 type MsgDoc = Doc & MsgData
 
-const dbName = localStorage.getItem('dbName') || Math.random().toString(36).substring(2)
-localStorage.setItem('dbName', dbName)
-
 const PUBLIC_PARTYKIT_HOST = import.meta.env.VITE_PUBLIC_PARTYKIT_HOST
 
 export function Chat() {
-  // const { id } = useParams<{ id: string }>()
+  const { id } = useParams<{ id: string }>()
+  const dbName = id
   const { register, handleSubmit, resetField } = useForm()
   const { database, useLiveQuery } = useFireproof(dbName)
 
