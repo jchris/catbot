@@ -1,7 +1,7 @@
 import './App.css'
 import React, { useEffect } from 'react'
 import { Route, Routes } from 'react-router-dom'
-// import { Home } from './pages/Home'
+import { Home } from './pages/Home'
 // import { Profile } from './pages/Profile'
 import { Chat } from './pages/Chat'
 
@@ -14,7 +14,7 @@ function App() {
     { path: '/chat/:id', component: Chat },
     { path: '/chat', component: ChatRedirect },
     // { path: '/profile/:id', component: Profile },
-    { path: '/', component: ChatRedirect }
+    { path: '/', component: Home }
   ]
 
   return (
