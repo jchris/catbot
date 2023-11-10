@@ -1,4 +1,5 @@
 import catImage from '../assets/cat.png'
+import cat2Image from '../assets/cat2.png'
 import {  ImageBubble } from '../components/ChatBubbles'
 
 export function Home() {
