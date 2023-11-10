@@ -19,14 +19,35 @@ export const ImageBubble: React.FC<ImageBubbleProps> = ({
     </div>
   )
 }
+type ImageCircleProps = {
+  imgSrc?: string
+  imgFile?: DocFileMeta
+  alt?: string
+}
+
+export const ImageCircle: React.FC<ImageCircleProps> = ({
+  imgSrc,
+  imgFile,
+  alt = 'Chat Bubble Image'
+}) => {
+  return (
+    <div className="flex-shrink-0 h-10 w-10 rounded-full ml-3 bg-gray-300">
+      {imgSrc && <img className="object-cover rounded-full m-0" src={imgSrc} alt={alt} />}
+      {imgFile && <ImgFile className="object-cover rounded-full m-0" alt={alt} meta={imgFile} />}
+    </div>
+  )
+}
+
 type ChatBubbleProps = {
   message: string
   when?: string
+  imgSrc?: string
+  imgFile?: DocFileMeta
 }
-export const ChatBubble: React.FC<ChatBubbleProps> = ({ message, when }) => {
+export const ChatBubble: React.FC<ChatBubbleProps> = ({ message, imgSrc, imgFile, when }) => {
   return (
     <div className="flex w-full mt-2 space-x-3 max-w-sm">
-      <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-300"></div>
+      <ImageCircle imgSrc={imgSrc} imgFile={imgFile} alt="Chat Model" />
       <div>
         <div className="bg-gray-300 p-3 rounded-r-lg rounded-bl-lg">
           <p className="text-sm">{message}</p>
@@ -39,8 +60,10 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({ message, when }) => {
 type UserBubbleProps = {
   message: string
   when?: string
+  imgSrc?: string
+  imgFile?: DocFileMeta
 }
-export const UserBubble: React.FC<UserBubbleProps> = ({ message, when }) => {
+export const UserBubble: React.FC<UserBubbleProps> = ({ message, imgSrc, imgFile, when }) => {
   return (
     <div className="flex w-full mt-2 space-x-3 max-w-sm ml-auto justify-end">
       <div>
@@ -53,7 +76,16 @@ export const UserBubble: React.FC<UserBubbleProps> = ({ message, when }) => {
     </div>
   )
 }
-function ImgFile({ meta, alt }: { alt: string; meta: DocFileMeta; cache?: boolean }) {
+function ImgFile({
+  meta,
+  alt,
+  className
+}: {
+  alt: string
+  meta: DocFileMeta
+  className?: string
+  cache?: boolean
+}) {
   const [imgDataUrl, setImgDataUrl] = useState('')
 
   useEffect(() => {
@@ -69,7 +101,7 @@ function ImgFile({ meta, alt }: { alt: string; meta: DocFileMeta; cache?: boolea
   }, [meta])
 
   if (imgDataUrl) {
-    return <img title={alt} className="mb-2 rounded" alt={alt} src={imgDataUrl} />
+    return <img className={className} title={alt} alt={alt} src={imgDataUrl} />
   } else {
     return <></>
   }

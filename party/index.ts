@@ -1,12 +1,34 @@
 import type * as Party from 'partykit/server'
+import { verifyToken } from "@clerk/backend";
 
 import { AI } from './ai'
+
+const DEFAULT_CLERK_ENDPOINT = "https://divine-mule-93.clerk.accounts.dev";
 
 export default class Server implements Party.Server {
   ai: AI
 
   constructor(readonly party: Party.Party) {
     this.ai = new AI(this.party.env['OPEN_AI_API_KEY'] as string)
+  }
+
+  static async onBeforeConnect(request: Party.Request, lobby: Party.Lobby) {
+    try {
+      // get authentication server url from environment variables (optional)
+      const issuer = lobby.env.CLERK_ENDPOINT || DEFAULT_CLERK_ENDPOINT
+      // get token from request query string
+      const token = new URL(request.url).searchParams.get("token") ?? "";
+      // verify the JWT (in this case using clerk)
+      const session = await verifyToken(token, { issuer });
+      // pass any information to the onConnect handler in headers (optional)
+      request.headers.set("X-User-ID", session.sub);
+      // forward the request onwards on onConnect
+      return request;
+    } catch (e) {
+      // authentication failed!
+      // short-circuit the request before it's forwarded to the party
+      return new Response("Unauthorized", { status: 401 });
+    }
   }
 
   onConnect(conn: Party.Connection, ctx: Party.ConnectionContext) {
@@ -17,13 +39,7 @@ export default class Server implements Party.Server {
   room: ${this.party.id}
   url: ${new URL(ctx.request.url).pathname}`
     )
-    // const fpp = this.party.context.parties['fireproof']
-    // console.log('fpp', fpp)
-    // const st = fpp.get('head')
-    // console.log('st', st)
-    // .storage.get('head').then(head => {
-      // console.log('head', head)
-    // })
+
   }
 
   async onMessage(

@@ -11,6 +11,8 @@ import usePartySocket from 'partysocket/react'
 import catImage from '../assets/cat.png'
 import { ImageBubble, ChatBubble, UserBubble } from '../components/ChatBubbles'
 
+import { useAuth } from '@clerk/clerk-react'
+
 type MsgData = { _id: string; msg?: string; prompt?: string; done?: boolean; sent: number }
 type MsgDoc = Doc & MsgData
 
@@ -21,6 +23,8 @@ export function Chat() {
   const dbName = id
   const { register, handleSubmit, resetField } = useForm()
   const { database, useLiveQuery } = useFireproof(dbName)
+
+  const { getToken } = useAuth()
 
   connect.partykit(database, PUBLIC_PARTYKIT_HOST)
 
@@ -56,7 +60,10 @@ export function Chat() {
 
   const socket = usePartySocket({
     host: PUBLIC_PARTYKIT_HOST,
-    room: dbName,
+    room: dbName!,
+    query: async () => ({
+      token: await getToken()
+    }),
     onOpen() {
       // console.log('open', e)
     },
@@ -130,27 +137,36 @@ export function Chat() {
 
   return (
     <>
+      <div className="fixed top-0 w-full bg-gray-300 p-4">
+        <h1>Cat Chat</h1>
+      </div>
       <div
         ref={scrollableDivRef}
-        className="flex flex-col-reverse overflow-y-auto overflow-x-hidden p-4 pb-24"
+        className="flex flex-col-reverse overflow-y-auto overflow-x-hidden p-4 py-24"
       >
-
         {rmessages.map((message: MsgDoc) => {
           // console.log('message', message)
           if (message.role === 'user') {
             return (
               <UserBubble
-              key={message._id}
+                key={message._id}
                 message={message.msg as string}
                 when={new Date(message.sent).toLocaleString()}
               />
             )
           } else if (message.role === 'img') {
-            return <ImageBubble key={message._id} imgFile={message._files?.img as DocFileMeta} alt={message.prompt} />
+            return (
+              <ImageBubble
+                key={message._id}
+                imgFile={message._files?.img as DocFileMeta}
+                alt={message.prompt}
+              />
+            )
           } else {
             return (
               <ChatBubble
-              key={message._id}
+                imgSrc={catImage}
+                key={message._id}
                 message={message.msg as string}
                 when={new Date(message.sent).toLocaleString()}
               />
@@ -158,7 +174,10 @@ export function Chat() {
           }
         })}
 
-        <ChatBubble message="Hi, I'm Fluffy, welcome to cat chat. You can ask 'meow' anything. What do you want to know?" />
+        <ChatBubble
+          imgSrc={catImage}
+          message="Hi, I'm Fluffy, welcome to cat chat. You can ask 'meow' anything. What do you want to know?"
+        />
         <ImageBubble imgSrc={catImage} alt="Welcome photo" />
       </div>
 
